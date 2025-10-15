@@ -1,0 +1,16 @@
+{
+  "name": "quickdraw-duel",
+  "version": "1.0.0",
+  "description": "Quickdraw duel service for StreamElements",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.7"
+  }
+}
