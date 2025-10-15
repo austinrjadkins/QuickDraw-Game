@@ -80,7 +80,7 @@ app.get("/quickdraw", (req, res) => {
 
 // /accept endpoint: accept a duel
 app.get("/accept", async (req, res) => {
-  const opponent = (req.query.opponent || "").replace("@", "").trim();
+  const opponent = (req.query.opponent || "").replace("@", "").trim(); // user typing !accept
   const challenger = (req.query.challenger || "").replace("@", "").trim();
 
   if (!opponent || !challenger) return res.send("⚠️ Usage: !accept [challengerName]");
@@ -95,9 +95,11 @@ app.get("/accept", async (req, res) => {
     return res.send("⏰ Duel expired.");
   }
 
+  // Remove duel from map (one-time)
   duels.delete(opponent.toLowerCase());
   const bet = duel.bet;
 
+  // Check balances
   const cBal = await getPoints(challenger);
   const oBal = await getPoints(opponent);
 
@@ -105,16 +107,16 @@ app.get("/accept", async (req, res) => {
   if (cBal < bet) return res.send(`🚫 ${challenger} doesn't have enough points.`);
   if (oBal < bet) return res.send(`🚫 ${opponent} doesn't have enough points.`);
 
-  // decide winner
+  // Decide winner
   const winner = Math.random() < 0.5 ? challenger : opponent;
   const loser = winner === challenger ? opponent : challenger;
 
-  // transfer points
+  // Transfer points
   await addPoints(loser, -bet);
   await addPoints(winner, bet);
 
-  // send victory message
-  return res.send(getVictoryMessage(winner, loser, bet));
+  // Send victory message
+  res.send(getVictoryMessage(winner, loser, bet));
 });
 
 // Health check
