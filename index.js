@@ -106,8 +106,7 @@ app.get("/accept", async (req, res) => {
   await addPoints(loser, -bet);
   await addPoints(winner, bet);
 
-  return res.send(`💥 ${winner} draws first and wins ${bet} points from ${loser}!`);
-});
+  return res.send(`🤠 🔫 Hold onto your hats! ${winner} draws faster than a rattlesnake and snags ${bet} points straight from ${loser}'s pocket! Yeehaw! 🌵🏜️`);
 
 // simple health check
 app.get("/", (req, res) => res.send("Quickdraw server running."));
