@@ -1,7 +1,8 @@
 {
   "name": "quickdraw-duel",
   "version": "1.0.0",
-  "description": "Quickdraw duel service for StreamElements",
+  "description": "Wild West Quickdraw Duel game for StreamElements",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
