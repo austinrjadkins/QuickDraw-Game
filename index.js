@@ -80,3 +80,46 @@ app.get("/quickdraw", (req, res) => {
 
 // /accept endpoint: accept a duel
 app.get("/accept", async (req, res) => {
+  const opponent = (req.query.opponent || "").replace("@", "").trim();
+  const challenger = (req.query.challenger || "").replace("@", "").trim();
+
+  if (!opponent || !challenger) return res.send("⚠️ Usage: !accept [challengerName]");
+
+  const duel = duels.get(opponent.toLowerCase());
+  if (!duel || duel.challenger.toLowerCase() !== challenger.toLowerCase()) {
+    return res.send("No active duel found between those two users.");
+  }
+
+  if (Date.now() > duel.expires) {
+    duels.delete(opponent.toLowerCase());
+    return res.send("⏰ Duel expired.");
+  }
+
+  duels.delete(opponent.toLowerCase());
+  const bet = duel.bet;
+
+  const cBal = await getPoints(challenger);
+  const oBal = await getPoints(opponent);
+
+  if (cBal === null || oBal === null) return res.send("⚠️ Error checking balances. Try again later.");
+  if (cBal < bet) return res.send(`🚫 ${challenger} doesn't have enough points.`);
+  if (oBal < bet) return res.send(`🚫 ${opponent} doesn't have enough points.`);
+
+  // decide winner
+  const winner = Math.random() < 0.5 ? challenger : opponent;
+  const loser = winner === challenger ? opponent : challenger;
+
+  // transfer points
+  await addPoints(loser, -bet);
+  await addPoints(winner, bet);
+
+  // send victory message
+  return res.send(getVictoryMessage(winner, loser, bet));
+});
+
+// Health check
+app.get("/", (req, res) => res.send("Quickdraw server running."));
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Quickdraw Duel server running on port ${PORT}`));
