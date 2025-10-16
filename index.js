@@ -89,6 +89,17 @@ setInterval(() => {
 // Health check
 app.get("/", (req, res) => res.send("Quickdraw server running."));
 
+// ----------------------
+// Test endpoint for SE connectivity
+// ----------------------
+app.get("/test", (req, res) => {
+  const user = req.query.user || "Tester";
+  res.json({
+    type: "message",
+    message: `✅ Connection successful! Hello, @${user}. SE can reach the server!`
+  });
+});
+
 // Challenge another user
 app.get("/quickdraw", requireApiKey, async (req, res) => {
   const challenger = (req.query.challenger || "").replace("@", "").trim();
