@@ -1,15 +1,14 @@
-// index.js
 import express from "express";
 import fetch from "node-fetch";
 
 const app = express();
 
 // ----------------------
-// Environment variables (set these in Render)
+// Environment variables
 // ----------------------
 const TOKEN = process.env.JWT_TOKEN;           // StreamElements JWT token
-const CHANNEL_ID = process.env.SE_CHANNEL_ID;  // Your StreamElements channel ID
-const API_KEY = process.env.API_KEY;           // Simple security key for requests
+const CHANNEL_ID = process.env.SE_CHANNEL_ID;  // StreamElements channel ID
+const API_KEY = process.env.API_KEY;           // Simple API key for requests
 
 // ----------------------
 // In-memory duel storage
@@ -20,7 +19,7 @@ const duels = new Map();
 // Helper functions
 // ----------------------
 
-// Get user points from StreamElements
+// Get user points
 async function getPoints(username) {
   try {
     const res = await fetch(`https://api.streamelements.com/kappa/v2/points/${CHANNEL_ID}/${encodeURIComponent(username)}`, {
@@ -35,7 +34,7 @@ async function getPoints(username) {
   }
 }
 
-// Add/subtract points for a user
+// Add/subtract points
 async function addPoints(username, amount) {
   try {
     await fetch(`https://api.streamelements.com/kappa/v2/points/${CHANNEL_ID}/${encodeURIComponent(username)}/add`, {
@@ -74,7 +73,7 @@ function requireApiKey(req, res, next) {
 }
 
 // ----------------------
-// Cleanup expired duels every 10 seconds
+// Cleanup expired duels
 // ----------------------
 setInterval(() => {
   const now = Date.now();
@@ -134,11 +133,9 @@ app.get("/tango", requireApiKey, async (req, res) => {
     return res.json({ type: "message", message: "⏰ Duel expired." });
   }
 
-  // Remove duel from memory
   duels.delete(opponent.toLowerCase());
   const bet = duel.bet;
 
-  // Check balances
   const cBal = await getPoints(challenger);
   const oBal = await getPoints(opponent);
 
@@ -148,11 +145,9 @@ app.get("/tango", requireApiKey, async (req, res) => {
   if (cBal < bet) return res.json({ type: "message", message: `🚫 ${challenger} doesn't have enough points.` });
   if (oBal < bet) return res.json({ type: "message", message: `🚫 ${opponent} doesn't have enough points.` });
 
-  // Decide winner
   const winner = Math.random() < 0.5 ? challenger : opponent;
   const loser = winner === challenger ? opponent : challenger;
 
-  // Transfer points
   await addPoints(loser, -bet);
   await addPoints(winner, bet);
 
