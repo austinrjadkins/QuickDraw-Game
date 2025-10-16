@@ -100,13 +100,19 @@ app.get("/test", (req, res) => {
   });
 });
 
+// ----------------------
 // Challenge another user
+// ----------------------
 app.get("/quickdraw", requireApiKey, async (req, res) => {
-  const challenger = (req.query.challenger || "").replace("@", "").trim();
-  const opponent = (req.query.opponent || "").replace("@", "").trim();
-  const bet = parseInt(req.query.bet, 10);
+  // ===== ADDED LOGGING =====
+  console.log("Quickdraw query received:", req.query);
 
+  const challenger = (req.query.challenger || "").replace("@", "").trim();
+  const opponent   = (req.query.opponent || "").replace("@", "").trim();
+  const bet        = parseInt(req.query.bet, 10);
+  
   if (!challenger || !opponent || isNaN(bet) || bet <= 0) {
+    console.log("Validation failed:", { challenger, opponent, bet });
     return res.json({ type: "message", message: "⚠️ Usage: !quickdraw @username [points]" });
   }
 
@@ -125,6 +131,7 @@ app.get("/quickdraw", requireApiKey, async (req, res) => {
   });
 });
 
+// ----------------------
 // Accept a duel (!tango)
 app.get("/tango", requireApiKey, async (req, res) => {
   const opponent = (req.query.opponent || "").replace("@", "").trim();
