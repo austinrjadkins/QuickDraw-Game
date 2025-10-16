@@ -107,7 +107,7 @@ app.get("/quickdraw", requireApiKey, async (req, res) => {
   // ----------------------
   // FIX: SE argument parsing issues
   // ----------------------
-  const challenger = (req.query.challenger || "").replace(/^@/, "").trim();
+  const challenger = (req.query.user || "").replace(/^@/, "").trim();
   const opponent   = (req.query.opponent   || "").replace(/^@/, "").trim();
   const bet        = parseInt(req.query.bet, 10);
 
