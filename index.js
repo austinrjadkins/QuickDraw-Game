@@ -89,9 +89,7 @@ setInterval(() => {
 // Health check
 app.get("/", (req, res) => res.send("Quickdraw server running."));
 
-// ----------------------
-// Test endpoint for SE connectivity
-// ----------------------
+// Test endpoint
 app.get("/test", (req, res) => {
   const user = req.query.user || "Tester";
   res.json({
@@ -101,16 +99,18 @@ app.get("/test", (req, res) => {
 });
 
 // ----------------------
-// Challenge another user
+// Quickdraw endpoint
 // ----------------------
 app.get("/quickdraw", requireApiKey, async (req, res) => {
-  // ===== ADDED LOGGING =====
   console.log("Quickdraw query received:", req.query);
 
-  const challenger = (req.query.challenger || "").replace("@", "").trim();
-  const opponent   = (req.query.opponent || "").replace("@", "").trim();
+  // ----------------------
+  // FIX: SE argument parsing issues
+  // ----------------------
+  const challenger = (req.query.challenger || "").replace(/^@/, "").trim();
+  const opponent   = (req.query.opponent   || "").replace(/^@/, "").trim();
   const bet        = parseInt(req.query.bet, 10);
-  
+
   if (!challenger || !opponent || isNaN(bet) || bet <= 0) {
     console.log("Validation failed:", { challenger, opponent, bet });
     return res.json({ type: "message", message: "⚠️ Usage: !quickdraw @username [points]" });
@@ -132,10 +132,13 @@ app.get("/quickdraw", requireApiKey, async (req, res) => {
 });
 
 // ----------------------
-// Accept a duel (!tango)
+// Tango endpoint (accept duel)
+// ----------------------
 app.get("/tango", requireApiKey, async (req, res) => {
-  const opponent = (req.query.opponent || "").replace("@", "").trim();
-  const challenger = (req.query.challenger || "").replace("@", "").trim();
+  console.log("Tango query received:", req.query);
+
+  const opponent   = (req.query.opponent   || "").replace(/^@/, "").trim();
+  const challenger = (req.query.challenger || "").replace(/^@/, "").trim();
 
   if (!opponent || !challenger) {
     return res.json({ type: "message", message: "⚠️ Usage: !tango [challengerName]" });
