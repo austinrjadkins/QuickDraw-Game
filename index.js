@@ -4,11 +4,16 @@ import fetch from "node-fetch";
 
 const app = express();
 
+// ----------------------
 // Environment variables (set these in Render)
-const TOKEN = process.env.JWT_TOKEN;
-const CHANNEL_ID = process.env.SE_CHANNEL_ID;
+// ----------------------
+const TOKEN = process.env.JWT_TOKEN;           // StreamElements JWT token
+const CHANNEL_ID = process.env.SE_CHANNEL_ID;  // Your StreamElements channel ID
+const API_KEY = process.env.API_KEY;           // Simple security key for requests
 
+// ----------------------
 // In-memory duel storage
+// ----------------------
 const duels = new Map();
 
 // ----------------------
@@ -59,6 +64,26 @@ function getVictoryMessage(winner, loser, bet) {
 }
 
 // ----------------------
+// Middleware: API Key Check
+// ----------------------
+function requireApiKey(req, res, next) {
+  if (req.query.key !== API_KEY) {
+    return res.status(403).json({ type: "message", message: "🚫 Unauthorized request." });
+  }
+  next();
+}
+
+// ----------------------
+// Cleanup expired duels every 10 seconds
+// ----------------------
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, duel] of duels.entries()) {
+    if (duel.expires < now) duels.delete(key);
+  }
+}, 10000);
+
+// ----------------------
 // Endpoints
 // ----------------------
 
@@ -66,7 +91,7 @@ function getVictoryMessage(winner, loser, bet) {
 app.get("/", (req, res) => res.send("Quickdraw server running."));
 
 // Challenge another user
-app.get("/quickdraw", async (req, res) => {
+app.get("/quickdraw", requireApiKey, async (req, res) => {
   const challenger = (req.query.challenger || "").replace("@", "").trim();
   const opponent = (req.query.opponent || "").replace("@", "").trim();
   const bet = parseInt(req.query.bet, 10);
@@ -86,22 +111,22 @@ app.get("/quickdraw", async (req, res) => {
 
   res.json({
     type: "message",
-    message: `🤠 ${challenger} challenges ${opponent} to a ${bet}-point quickdraw! @${challenger} has ${challengerPoints} points. ${opponent}, type !accept ${challenger} within 30s to accept.`
+    message: `🤠 ${challenger} challenges ${opponent} to a ${bet}-point quickdraw! @${challenger} has ${challengerPoints} points. ${opponent}, type !tango ${challenger} within 30s to accept.`
   });
 });
 
-// Accept a duel
-app.get("/accept", async (req, res) => {
+// Accept a duel (!tango)
+app.get("/tango", requireApiKey, async (req, res) => {
   const opponent = (req.query.opponent || "").replace("@", "").trim();
   const challenger = (req.query.challenger || "").replace("@", "").trim();
 
   if (!opponent || !challenger) {
-    return res.json({ type: "message", message: "⚠️ Usage: !accept [challengerName]" });
+    return res.json({ type: "message", message: "⚠️ Usage: !tango [challengerName]" });
   }
 
   const duel = duels.get(opponent.toLowerCase());
   if (!duel || duel.challenger.toLowerCase() !== challenger.toLowerCase()) {
-    return res.json({ type: "message", message: "No active duel found between those two users." });
+    return res.json({ type: "message", message: "⚠️ No active duel found between those two users." });
   }
 
   if (Date.now() > duel.expires) {
