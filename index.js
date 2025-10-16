@@ -22,9 +22,10 @@ const duels = new Map();
 // Get user points
 async function getPoints(username) {
   try {
-    const res = await fetch(`https://api.streamelements.com/kappa/v2/points/${CHANNEL_ID}/${encodeURIComponent(username)}`, {
-      headers: { Authorization: `Bearer ${TOKEN}` }
-    });
+    const res = await fetch(
+      `https://api.streamelements.com/kappa/v2/points/${CHANNEL_ID}/${encodeURIComponent(username)}`,
+      { headers: { Authorization: `Bearer ${TOKEN}` } }
+    );
     if (!res.ok) return null;
     const data = await res.json();
     return data?.points ?? 0;
@@ -37,14 +38,17 @@ async function getPoints(username) {
 // Add/subtract points
 async function addPoints(username, amount) {
   try {
-    await fetch(`https://api.streamelements.com/kappa/v2/points/${CHANNEL_ID}/${encodeURIComponent(username)}/add`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${TOKEN}`
-      },
-      body: JSON.stringify({ amount })
-    });
+    await fetch(
+      `https://api.streamelements.com/kappa/v2/points/${CHANNEL_ID}/${encodeURIComponent(username)}/add`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${TOKEN}`
+        },
+        body: JSON.stringify({ amount })
+      }
+    );
   } catch (err) {
     console.error("addPoints error:", err);
   }
@@ -91,10 +95,10 @@ app.get("/", (req, res) => res.send("Quickdraw server running."));
 
 // Test endpoint
 app.get("/test", (req, res) => {
-  const user = req.query.user || "Tester";
+  const challenger = req.query.challenger || "Tester";
   res.json({
     type: "message",
-    message: `✅ Connection successful! Hello, @${user}. SE can reach the server!`
+    message: `✅ Connection successful! Hello, @${challenger}. SE can reach the server!`
   });
 });
 
@@ -104,20 +108,21 @@ app.get("/test", (req, res) => {
 app.get("/quickdraw", requireApiKey, async (req, res) => {
   console.log("Quickdraw query received:", req.query);
 
-  // ----------------------
-  // FIX: SE argument parsing issues
-  // ----------------------
-  const challenger = (req.query.user || "").replace(/^@/, "").trim();
+  const challenger = (req.query.challenger || "").replace(/^@/, "").trim();
   const opponent   = (req.query.opponent   || "").replace(/^@/, "").trim();
   const bet        = parseInt(req.query.bet, 10);
 
   if (!challenger || !opponent || isNaN(bet) || bet <= 0) {
-    console.log("Validation failed:", { challenger, opponent, bet });
     return res.json({ type: "message", message: "⚠️ Usage: !quickdraw @username [points]" });
   }
 
   if (challenger.toLowerCase() === opponent.toLowerCase()) {
     return res.json({ type: "message", message: "⚠️ You can't challenge yourself, partner." });
+  }
+
+  // Prevent duplicate pending duel for same opponent
+  if (duels.has(opponent.toLowerCase())) {
+    return res.json({ type: "message", message: `⚠️ ${opponent} already has a pending challenge.` });
   }
 
   // Store duel for 30 seconds
